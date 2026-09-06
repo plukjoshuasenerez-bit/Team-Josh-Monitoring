@@ -2650,9 +2650,10 @@ function renderShipTab(kind){
     const card=$(cardId);if(card){card.classList.add('ship-visible');$(prefix+'ShipSlot').appendChild(card)}
     $(prefix+'ShipTeam').addEventListener('change',()=>renderShipTab(kind));
   }
-  const teams=subTeams.slice(),sel=$(prefix+'ShipTeam'),v=sel.value;
-  sel.innerHTML=teams.length?teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join(''):'<option value="">No sub-teams</option>';if(v&&teams.some(t=>t.id===v))sel.value=v;if(!sel.value&&teams.length)sel.value=teams[0].id;
-  const id=sel.value;if(!id){if($(prefix+'ShipRoster'))$(prefix+'ShipRoster').innerHTML='<tr><td colspan="7" class="rank-empty">Create a sub-team first (in the Sub-Teams tab).</td></tr>';return}
+  const roleFor=kind==='pm'?'Pru Manager':'Unit Manager';
+  const teams=subTeams.filter(t=>{const l=agentByCode(t.leaderCode);return l&&l.position===roleFor}),sel=$(prefix+'ShipTeam'),v=sel.value;
+  sel.innerHTML=teams.length?teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join(''):`<option value="">No sub-teams led by a ${esc(roleFor)}</option>`;if(v&&teams.some(t=>t.id===v))sel.value=v;if(!sel.value&&teams.length)sel.value=teams[0].id;
+  const id=sel.value;if(!id){if($(prefix+'ShipRoster'))$(prefix+'ShipRoster').innerHTML=`<tr><td colspan="7" class="rank-empty">No sub-team leader has Position = ${esc(roleFor)}. Set it in the Agents List, then make them a Sub-Team leader.</td></tr>`;return}
   selectedSubTeamId=id;renderShipMonitoring(id);
   const start=(kind==='pm'?$('pmShipStart'):$('umShipStart'))?.value||'',end=(kind==='pm'?$('pmShipEnd'):$('umShipEnd'))?.value||'';
   if($(prefix+'ShipRoster'))$(prefix+'ShipRoster').innerHTML=subteamRosterRows(id,start,end);
