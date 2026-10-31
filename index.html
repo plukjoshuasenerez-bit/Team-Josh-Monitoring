@@ -993,6 +993,50 @@ $('showPmShip')?.addEventListener('click',e=>{e.preventDefault();switchShipView(
 
 </script>
 <script type="module">
+/* Version 2.2.1 — Storage-full guard.
+   Browsers give each site only ~5MB of localStorage. Once it is full (usually
+   because of big photos), every save throws and NOTHING can be added anymore.
+   This layer catches that: values that don't fit — and any single value over
+   ~150KB — are kept in IndexedDB (hundreds of MB available) instead, and
+   getItem/setItem/removeItem keep working exactly the same for the app. */
+const __tjOvf=new Map();
+await (async()=>{
+  const SP=Storage.prototype,nGet=SP.getItem,nSet=SP.setItem,nRem=SP.removeItem,nKey=SP.key;
+  const isLS=s=>{try{return s===window.localStorage}catch(e){return false}};
+  let dbp=null;
+  const db=()=>dbp||(dbp=new Promise((res,rej)=>{let done=false;const t=setTimeout(()=>{if(!done){done=true;rej(new Error('IDB timeout'))}},4000);
+    try{const r=indexedDB.open('TJStorageOverflow',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('ls'))r.result.createObjectStore('ls')};
+      r.onsuccess=()=>{clearTimeout(t);if(done){r.result.close();return}done=true;res(r.result)};r.onerror=()=>{clearTimeout(t);if(!done){done=true;rej(r.error)}};
+      r.onblocked=()=>{}}catch(e){clearTimeout(t);done=true;rej(e)}}).catch(e=>{dbp=null;throw e}));
+  const idb=(mode,fn)=>db().then(d=>new Promise((res,rej)=>{const tx=d.transaction('ls',mode);const out=fn(tx.objectStore('ls'));tx.oncomplete=()=>res(out&&out.result);tx.onerror=()=>rej(tx.error)}));
+  const put=(k,v)=>idb('readwrite',s=>s.put(v,k)).catch(e=>console.warn('overflow put',k,e));
+  const del=k=>idb('readwrite',s=>s.delete(k)).catch(()=>{});
+  // 1) load anything previously moved to IndexedDB
+  try{await idb('readonly',s=>{const c=s.openCursor();c.onsuccess=()=>{const cur=c.result;if(cur){__tjOvf.set(String(cur.key),String(cur.value));cur.continue()}};return null})}catch(e){console.warn('overflow load',e)}
+  const BIG=150000;
+  const spill=(k,v)=>{__tjOvf.set(k,v);try{nRem.call(localStorage,k)}catch(e){}put(k,v)};
+  const EXPENDABLE=['tj-snapshot-v1','tj-remind-log-v1'];
+  SP.getItem=function(k){if(isLS(this)){k=String(k);if(__tjOvf.has(k))return __tjOvf.get(k)}return nGet.call(this,k)};
+  SP.removeItem=function(k){if(isLS(this)){k=String(k);if(__tjOvf.has(k)){__tjOvf.delete(k);del(k)}}return nRem.call(this,k)};
+  SP.setItem=function(k,v){
+    if(!isLS(this))return nSet.call(this,k,v);
+    k=String(k);v=String(v);
+    if(v.length>BIG){spill(k,v);return}
+    try{nSet.call(this,k,v);if(__tjOvf.has(k)){__tjOvf.delete(k);del(k)}return}catch(e){}
+    // storage full: drop disposable data, move the biggest values out, retry
+    EXPENDABLE.forEach(x=>{try{nRem.call(localStorage,x)}catch(_){}});
+    try{const sizes=[];for(let i=0;i<localStorage.length;i++){const kk=nKey.call(localStorage,i);const vv=nGet.call(localStorage,kk)||'';sizes.push([kk,vv])}
+      sizes.sort((a,b)=>b[1].length-a[1].length).slice(0,3).forEach(([kk,vv])=>{if(vv.length>20000&&kk!==k)spill(kk,vv)})}catch(_){}
+    try{nSet.call(this,k,v);if(__tjOvf.has(k)){__tjOvf.delete(k);del(k)}return}catch(e){}
+    spill(k,v); // last resort: keep it in IndexedDB — the save still succeeds
+  };
+  // 2) free up space now: move existing oversized values out of localStorage
+  try{const move=[];for(let i=0;i<localStorage.length;i++){const kk=nKey.call(localStorage,i);const vv=nGet.call(localStorage,kk);if(vv&&vv.length>BIG)move.push([kk,vv])}move.forEach(([kk,vv])=>spill(kk,vv))}catch(e){console.warn('overflow migrate',e)}
+  // clean up junk keys created by an older bug
+  ['setItem','getItem','removeItem'].forEach(x=>{try{if(nGet.call(localStorage,x)!=null&&typeof nGet.call(localStorage,x)==='string'&&nGet.call(localStorage,x).length<5000)nRem.call(localStorage,x)}catch(_){}});
+  window.__tjAllLsKeys=()=>{const s=new Set();for(let i=0;i<localStorage.length;i++)s.add(nKey.call(localStorage,i));__tjOvf.forEach((_,k)=>s.add(k));return [...s]};
+})().catch(e=>{console.warn('storage guard',e);window.__tjAllLsKeys=()=>{const a=[];for(let i=0;i<localStorage.length;i++)a.push(localStorage.key(i));return a}});
+
 /* Version 2.2.0 — Embedded-data seed. When this file is exported "with data",
    the data is baked into the HTML as window.__TJ_SEED__. On a device that has
    no data yet, we load it so the recipient sees everything immediately. */
@@ -1002,7 +1046,7 @@ const SUBMISSION_KEY='teamJoshMonitoringSubmissionsV1';
 const AGENT_DB='teamJoshMonitoringDB';
 const AGENT_PHOTO_STORE='agentPhotos';
 const placeholder=`data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="#dfe8ea"/><circle cx="50" cy="38" r="20" fill="#8aa5aa"/><path d="M15 95c4-25 18-36 35-36s31 11 35 36" fill="#8aa5aa"/></svg>')}`;
-function openAgentDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(AGENT_DB,2);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(AGENT_PHOTO_STORE))db.createObjectStore(AGENT_PHOTO_STORE);if(!db.objectStoreNames.contains('kv'))db.createObjectStore('kv');};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+function openAgentDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(AGENT_DB,2);req.onblocked=()=>{setTimeout(()=>reject(new Error('Database upgrade blocked — close other tabs of this site and reload.')),3000)};req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(AGENT_PHOTO_STORE))db.createObjectStore(AGENT_PHOTO_STORE);if(!db.objectStoreNames.contains('kv'))db.createObjectStore('kv');};req.onsuccess=()=>{const d=req.result;d.onversionchange=()=>d.close();resolve(d)};req.onerror=()=>reject(req.error)})}
 async function saveAgentPhoto(id,photo){if(!id)return;const db=await openAgentDB();await new Promise((resolve,reject)=>{const tx=db.transaction(AGENT_PHOTO_STORE,'readwrite');const store=tx.objectStore(AGENT_PHOTO_STORE);photo?store.put(photo,String(id)):store.delete(String(id));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close()}
 async function idbKvGet(key){try{const db=await openAgentDB();const v=await new Promise((res,rej)=>{const tx=db.transaction('kv','readonly');const r=tx.objectStore('kv').get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});db.close();return v;}catch(e){console.warn('idbKvGet',key,e);return undefined;}}
 async function idbKvSet(key,val){try{const db=await openAgentDB();await new Promise((res,rej)=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(val,key);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close();return true;}catch(e){console.warn('idbKvSet',key,e);return false;}}
@@ -1325,7 +1369,7 @@ function BONUS_KEY_SAFE(){return 'tj-bonus-campaigns-v1'}
 function exportStandalone(){
   try{
     const seed={};
-    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);seed[k]=localStorage.getItem(k)}
+    for(const k of window.__tjAllLsKeys()){seed[k]=localStorage.getItem(k)}
     let doc='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
     const seedTag='<script>window.__TJ_SEED__='+JSON.stringify(seed).replace(/</g,'\\u003c')+';<\/script>';
     doc=doc.replace(/<script>window\.__TJ_SEED__=[\s\S]*?<\/script>/,'');
@@ -1338,7 +1382,7 @@ function exportStandalone(){
 /* Full-device data transfer: download EVERYTHING in localStorage as one file,
    send it to another device, and upload there to receive the data. */
 function tjSaveFilename(){const d=new Date(),p=n=>String(n).padStart(2,'0');return `Team Josh Monitoring ${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}.json`}
-function buildDataBlob(){const dump={__meta:{app:'Team Josh Monitoring',type:'full-with-photos',exportedAt:new Date().toISOString()},data:{}};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);dump.data[k]=localStorage.getItem(k)}try{dump.data[STORAGE_KEY]=JSON.stringify(agents.map(({_photoSynced,...r})=>r))}catch(e){}try{dump.data[SUBMISSION_KEY]=JSON.stringify(submissions)}catch(e){}return {blob:new Blob([JSON.stringify(dump)],{type:'application/json'}),filename:tjSaveFilename()}}
+function buildDataBlob(){const dump={__meta:{app:'Team Josh Monitoring',type:'full-with-photos',exportedAt:new Date().toISOString()},data:{}};for(const k of window.__tjAllLsKeys()){dump.data[k]=localStorage.getItem(k)}try{dump.data[STORAGE_KEY]=JSON.stringify(agents.map(({_photoSynced,...r})=>r))}catch(e){}try{dump.data[SUBMISSION_KEY]=JSON.stringify(submissions)}catch(e){}return {blob:new Blob([JSON.stringify(dump)],{type:'application/json'}),filename:tjSaveFilename()}}
 function tjStamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+'-'+p(d.getMinutes())}
 function tjTeamName(){return ((typeof branding!=='undefined'&&branding&&branding.teamName)||'Team Josh').replace(/[\\/:*?"<>|]/g,'').trim()||'Team Josh'}
 async function saveToFolder(kind){
@@ -1636,8 +1680,9 @@ for(const a of agents){try{a.photo=await loadAgentPhoto(a.id)}catch(e){a.photo='
 let submissions=JSON.parse(localStorage.getItem(SUBMISSION_KEY)||'[]');
 try{const _idbSubs=await idbKvGet('submissions');if(Array.isArray(_idbSubs)){submissions=_idbSubs;try{localStorage.removeItem(SUBMISSION_KEY)}catch(e){}}else if(submissions.length){const _ok=await idbKvSet('submissions',submissions);if(_ok){try{localStorage.removeItem(SUBMISSION_KEY)}catch(e){}}}else{try{localStorage.removeItem(SUBMISSION_KEY)}catch(e){}}}catch(e){console.warn('submissions storage upgrade',e)}
 const $=id=>document.getElementById(id);
+const _photoSaved=new Map();
 const persist=async()=>{
-  for(const a of agents){await saveAgentPhoto(a.id,a.photo||'')}
+  for(const a of agents){const p=a.photo||'';if(_photoSaved.get(a.id)===p)continue;try{await saveAgentPhoto(a.id,p);_photoSaved.set(a.id,p)}catch(e){console.warn('Photo save failed',a.id,e)}}
   const compact=agents.map(({photo,_photoSynced,...a})=>a);
   localStorage.setItem(STORAGE_KEY,JSON.stringify(compact));
   if(CLOUD_ON) syncAgentsToCloud().catch(e=>console.warn('Agent cloud sync failed',e));
@@ -2032,7 +2077,7 @@ $('statusMsBtn')?.addEventListener('click',e=>{e.stopPropagation();$('statusMsPa
 $('statusMsPanel')?.addEventListener('change',e=>{if(e.target.hasAttribute('data-ms-all'))statusSel=[];else statusSel=[...$('statusMsPanel').querySelectorAll('input[value]:checked')].map(i=>i.value);renderStatusMs();render()});
 document.addEventListener('click',e=>{if(!e.target.closest('#statusMs'))$('statusMsPanel')?.classList.remove('open')});
 renderStatusMs();
-$('photoInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{currentPhoto=r.result;$('photoPreview').src=currentPhoto};r.readAsDataURL(f)};
+$('photoInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{currentPhoto=await compressImage(f,600,0.85)}catch(err){currentPhoto=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f)})}$('photoPreview').src=currentPhoto};
 async function saveAgentRecord(){
   const saveBtn=$('saveAgentBtn');
   if(saveBtn?.disabled)return;
@@ -3275,7 +3320,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('.pw-eye');if(!b)
 let tjDirty=false,tjReady=false,reminderDismissed=false;
 function updateSaveReminder(){const el=document.getElementById('saveBubble');if(el)el.style.display=(tjDirty&&!reminderDismissed)?'block':'none'}
 function markSaved(){tjDirty=false;updateSaveReminder()}
-try{const _lsSet=localStorage.setItem.bind(localStorage);localStorage.setItem=function(k,v){_lsSet(k,v);try{if(tjReady&&/^tj-|^teamJoshMonitoring/.test(k)){tjDirty=true;updateSaveReminder()}}catch(e){}}}catch(e){}
+try{const _lsSet=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){_lsSet.call(this,k,v);if(this!==window.localStorage)return;try{if(tjReady&&/^tj-|^teamJoshMonitoring/.test(k)){tjDirty=true;updateSaveReminder()}}catch(e){}}}catch(e){}
 setTimeout(()=>{tjReady=true},3500);
 /* Auto-save daily at 10PM if there are unsaved changes and the user hasn't saved */
 let _tjLastAutoSave='';try{_tjLastAutoSave=localStorage.getItem('tj-last-autosave')||''}catch(e){}
@@ -3887,7 +3932,7 @@ document.addEventListener('click',e=>{if(!e.target.closest||!e.target.closest('#
 
 $('addTravelBtn')?.addEventListener('click',addTravel);
 $('travelCampaignList')?.addEventListener('input',e=>{const n=e.target.closest('[data-trav-name]');if(n){const c=travelCampaigns.find(x=>x.id===n.dataset.travName);if(c){c.name=n.value;saveTravelCampaigns()}}});
-$('travelCampaignList')?.addEventListener('change',e=>{const ph=e.target.closest('[data-trav-photo]');if(ph&&ph.files&&ph.files[0]){const c=travelCampaigns.find(x=>x.id===ph.dataset.travPhoto);const r=new FileReader();r.onload=()=>{if(c){c.photo=r.result;saveTravelCampaigns();renderTravel()}};r.readAsDataURL(ph.files[0])}});
+$('travelCampaignList')?.addEventListener('change',e=>{const ph=e.target.closest('[data-trav-photo]');if(ph&&ph.files&&ph.files[0]){const c=travelCampaigns.find(x=>x.id===ph.dataset.travPhoto);const f=ph.files[0];compressImage(f,1000,0.85).catch(()=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f)})).then(d=>{if(c){c.photo=d;saveTravelCampaigns();renderTravel()}})}});
 $('travelCampaignList')?.addEventListener('click',e=>{const tg=e.target.closest('[data-trav-target]'),dl=e.target.closest('[data-trav-del]'),cl=e.target.closest('[data-trav-collapse]');if(tg)openTravelTarget(tg.dataset.travTarget);if(dl)deleteTravel(dl.dataset.travDel);if(cl){const card=cl.closest('.travel-campaign');card.classList.toggle('collapsed');cl.textContent=card.classList.contains('collapsed')?'▸':'▾'}});
 $('travelProductsBtn')?.addEventListener('click',openTravelProduct);
 $('saveTravelTarget')?.addEventListener('click',saveTravelTarget);
