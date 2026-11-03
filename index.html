@@ -442,6 +442,7 @@
 @media(max-width:1100px){#tab-subteams .performance-kpis{grid-template-columns:repeat(3,1fr)!important}#tab-subteams .chart-grid{grid-template-columns:1fr!important}#tab-subteams .executive-analytics{grid-template-columns:1fr!important}#tab-subteams .subteam-filter-grid{grid-template-columns:repeat(2,1fr)!important}}
 @media(max-width:650px){#tab-subteams .performance-kpis{grid-template-columns:repeat(2,1fr)!important}#tab-subteams .subteam-filter-grid{grid-template-columns:1fr!important}}
 
+tr.tr-today>td{background:rgba(22,163,74,.12);border-top:2px solid #16a34a;border-bottom:2px solid #16a34a}tr.tr-today>td:first-child{border-left:2px solid #16a34a}tr.tr-today>td:last-child{border-right:2px solid #16a34a}tr.tr-week>td{background:rgba(245,158,11,.12);border-top:2px solid #f59e0b;border-bottom:2px solid #f59e0b}tr.tr-week>td:first-child{border-left:2px solid #f59e0b}tr.tr-week>td:last-child{border-right:2px solid #f59e0b}
 </style>
 </head>
 <body>
@@ -1923,8 +1924,9 @@ function renderBirthdays(){
   const _agBd=agents.filter(a=>a.birthday).map(a=>{const p=String(a.birthday).split('-');return{a,bm:Number(p[1]),bd:Number(p[2]),by:Number(p[0])}});const _clBd=clients.filter(c=>/^\d{4}-\d{2}-\d{2}$/.test(c.birthday||'')).map(c=>{const p=String(c.birthday).split('-');return{a:{name:c.name,status:'Client',photo:''},bm:Number(p[1]),bd:Number(p[2]),by:Number(p[0])}});const all=_agBd.filter(o=>!bdayListMonth||o.bm===bdayListMonth).sort((x,y)=>x.bm-y.bm||x.bd-y.bd);
   const bdayHtml=all.length?all.map(({a,bm,bd,by})=>{let next=new Date(now.getFullYear(),bm-1,bd);if(next<todayMid)next=new Date(now.getFullYear()+1,bm-1,bd);const dd=Math.round((next-todayMid)/86400000),turning=by?next.getFullYear()-by:null;
     return `<tr><td><div class="rank-agent"><img class="rank-avatar" src="${a.photo||placeholder}" onerror="this.src='${placeholder}'"><div class="rank-agent-info"><div class="rank-agent-name">${esc(displayAgentName(a.name))}</div><div class="rank-agent-code">${esc(a.status||'')}</div></div></div></td><td>🎂 ${next.toLocaleDateString('en-PH',{month:'long',day:'numeric'})}</td><td>${turning?('Turning '+turning):'—'}</td><td>${dd===0?'<b class="tg-green">Today! 🎉</b>':('in '+dd+' day'+(dd===1?'':'s'))}</td></tr>`}).join(''):'<tr><td colspan="4" class="rank-empty">No birthday data yet.</td></tr>';
-  const evSorted=[...calEvents].filter(e=>!bdayListMonth||Number(String(e.date).slice(5,7))===bdayListMonth).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.time).localeCompare(String(b.time)));
-  const evHtml=evSorted.length?evSorted.map(e=>`<tr>
+  const _twNow=new Date();const _twIso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const _twToday=_twIso(_twNow);const _twWS=new Date(_twNow.getFullYear(),_twNow.getMonth(),_twNow.getDate()-_twNow.getDay());const _twWE=new Date(_twWS);_twWE.setDate(_twWS.getDate()+6);const _twWSs=_twIso(_twWS),_twWEs=_twIso(_twWE);const _evRowCls=dt=>{const d=String(dt||'').slice(0,10);return d===_twToday?'tr-today':(d>=_twWSs&&d<=_twWEs?'tr-week':'');};
+   const evSorted=[...calEvents].filter(e=>!bdayListMonth||Number(String(e.date).slice(5,7))===bdayListMonth).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.time).localeCompare(String(b.time)));
+  const evHtml=evSorted.length?evSorted.map(e=>`<tr class="${_evRowCls(e.date)}">
      <td><span class="ev-dot" style="background:${esc(e.color||'#2f80ed')}"></span><b>${esc(e.title)}</b>${e.type?` <span class="ev-type">${esc(e.type)}</span>`:''}${e.notes?('<div class="q-sub">'+esc(e.notes)+'</div>'):''}</td>
      <td>${esc(fmtEventDate(e.date))}${e.time?('<div class="q-sub">'+esc(e.time)+'</div>'):''}</td>
      <td>${e.host?esc(e.host):'—'}${e.zoom?('<div class="q-sub">'+esc(e.zoom)+'</div>'):''}</td>
