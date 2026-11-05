@@ -444,6 +444,7 @@
 
 tr.tr-today>td{background:rgba(22,163,74,.12);border-top:2px solid #16a34a;border-bottom:2px solid #16a34a}tr.tr-today>td:first-child{border-left:2px solid #16a34a}tr.tr-today>td:last-child{border-right:2px solid #16a34a}tr.tr-week>td{background:rgba(245,158,11,.12);border-top:2px solid #f59e0b;border-bottom:2px solid #f59e0b}tr.tr-week>td:first-child{border-left:2px solid #f59e0b}tr.tr-week>td:last-child{border-right:2px solid #f59e0b}
 .cl-status{border:none;border-radius:6px;padding:4px 10px;font-weight:700;cursor:pointer;-webkit-appearance:none;appearance:none}.cl-st-green{background:#16a34a;color:#fff}.cl-st-red{background:#dc2626;color:#fff}.cl-st-gray{background:#9ca3af;color:#fff}.cl-status option{background:#fff;color:#1f2937}#clientAdd{background:#0f766e;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:13px}#clientAdd:hover{filter:brightness(1.08)}
+.cal-bday.bday-client-inforce{background:#ffe3ef;color:#c0397a;font-weight:900}.cal-bday.bday-client-inforce img{background:#f8cfe0;border-color:#e0457b}.cal-bday.bday-client-other{background:#e5e7eb;color:#6b7280;font-weight:800}.cal-bday.bday-client-other img{background:#d1d5db;border-color:#9ca3af}
 </style>
 </head>
 <body>
@@ -1901,14 +1902,14 @@ setInterval(()=>{document.querySelectorAll('.todo-since[data-created]').forEach(
 function renderBirthdays(){
   const host=$('birthdayList');if(!host)return;
   const y=bdayView.getFullYear(),m=bdayView.getMonth(),monthName=bdayView.toLocaleDateString('en-PH',{month:'long',year:'numeric'});
-  const byDay={};agents.filter(a=>a.birthday).forEach(a=>{const p=String(a.birthday).split('-');if(Number(p[1])-1===m)(byDay[Number(p[2])]??=[]).push(a)});clients.filter(c=>/^\d{4}-\d{2}-\d{2}$/.test(c.birthday||'')).forEach(c=>{const p=String(c.birthday).split('-');if(Number(p[1])-1===m)(byDay[Number(p[2])]??=[]).push({name:c.name,birthday:c.birthday,photo:'',_client:true})});
+  const byDay={};agents.filter(a=>a.birthday).forEach(a=>{const p=String(a.birthday).split('-');if(Number(p[1])-1===m)(byDay[Number(p[2])]??=[]).push(a)});clients.filter(c=>/^\d{4}-\d{2}-\d{2}$/.test(c.birthday||'')).forEach(c=>{const p=String(c.birthday).split('-');if(Number(p[1])-1===m)(byDay[Number(p[2])]??=[]).push({name:c.name,birthday:c.birthday,photo:'',_client:true,status:c.status})});
   const evByDay={};calEvents.forEach(e=>{if(calHiddenColors.has(e.color||'#2f80ed'))return;const p=String(e.date||'').split('-');if(p.length===3&&Number(p[0])===y&&Number(p[1])-1===m)(evByDay[Number(p[2])]??=[]).push(e)});
   const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),today=new Date();
   let cells='';for(let i=0;i<first;i++)cells+='<div class="cal-cell empty"></div>';
   for(let d=1;d<=days;d++){const isToday=(today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d),ppl=(byDay[d]||[]).filter(a=>a._client?!calHideClientBday:!calHideBirthdays),evs=evByDay[d]||[];
     cells+=`<div class="cal-cell${isToday?' today':''}${(ppl.length||evs.length)?' has-bday':''}"><div class="cal-day">${d}</div>`
       +evs.map(e=>`<div class="cal-ev" title="${esc(e.title)}${e.time?(' • '+esc(e.time)):''}" style="background:${esc(e.color||'#2f80ed')}" data-ev="${e.id}">${e.time?`<span class="ev-time">${esc(e.time)}</span>`:''}<span class="ev-ttl">${esc(e.title)}</span></div>`).join('')
-      +ppl.map(a=>{const isC=a._client,fn=displayAgentName(a.name||'').trim().split(/\s+/)[0]||'';return `<div class="cal-bday ${isC?'bday-client':'bday-pink'}" title="🎂 ${isC?'Client: ':''}${esc(a.name)}"><img src="${a.photo||placeholder}" onerror="this.src='${placeholder}'"><span>🎂 ${isC?'':'HBD '}${esc(fn)}${isC?' 🧑':''}</span></div>`}).join('')
+      +ppl.map(a=>{const isC=a._client,fn=displayAgentName(a.name||'').trim().split(/\s+/)[0]||'';return `<div class="cal-bday ${isC?((!a.status||/in.?force/i.test(String(a.status)))?'bday-client-inforce':'bday-client-other'):'bday-pink'}" title="🎂 ${isC?'Client: ':''}${esc(a.name)}"><img src="${a.photo||placeholder}" onerror="this.src='${placeholder}'"><span>🎂 ${isC?'':'HBD '}${esc(fn)}${isC?' 🧑':''}</span></div>`}).join('')
       +`</div>`;
   }
   // ---- Week view (time-block) ----
