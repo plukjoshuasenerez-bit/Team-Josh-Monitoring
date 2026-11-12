@@ -523,11 +523,25 @@ tr.tr-today>td{background:rgba(22,163,74,.12);border-top:2px solid #16a34a;borde
 .wk-ev.wk-evday .wk-dbtns button{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:10px;font-weight:800;padding:3px 9px;border-radius:7px;cursor:pointer}
 .wk-ev.wk-evday .wk-dbtns button:hover{background:rgba(255,255,255,.36)}
 .wk-empty{padding:34px 16px;text-align:center;color:#94a3b8;font-size:13px}
+.wk-cycle{min-width:92px;font-weight:800}
+.wkm-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px}
+.wkm-dow{text-align:center;font-weight:800;font-size:11px;color:#fff;background:linear-gradient(180deg,#0B5ED7,#083B8A);padding:6px 0;border-radius:6px}
+.wkm-cell{min-height:94px;border:1px solid #eef2f6;border-radius:8px;padding:4px;cursor:pointer;display:flex;flex-direction:column;gap:2px;background:#fff;transition:background .12s;overflow:hidden}
+.wkm-cell:hover{background:#f0f7ff}
+.wkm-cell.wkm-out{background:#f8fafc;opacity:.5}
+.wkm-cell.wkm-today{box-shadow:inset 0 0 0 2px #B8325F}
+.wkm-cell.wkm-sel{box-shadow:inset 0 0 0 2px #0B5ED7}
+.wkm-dnum{font-size:11px;font-weight:800;color:#334155}
+.wkm-chip{font-size:9.5px;font-weight:700;color:#fff;border-radius:5px;padding:1px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.wkm-chip:hover{filter:brightness(1.08)}
+.wkm-more{font-size:9px;font-weight:700;color:#64748b}
 @media (max-width:640px){
 .wk-range{font-size:12px}
 .wk-ev b{font-size:10.5px}
-.wk-mid{order:3;flex-basis:100%;justify-content:flex-start;margin-top:4px}
 .wk-ev.wk-evday .wk-dtitle{font-size:12.5px}
+.wkm-cell{min-height:62px;padding:3px}
+.wkm-chip{font-size:8.5px;padding:1px 3px}
+.wkm-dow{font-size:9.5px}
 }
 @media print{
 .wk-top,.wk-legend,.wk-note,.wk-menu{display:none!important}
@@ -2147,6 +2161,30 @@ function wkDayHTML(today){
   if(!acts.length)h+='<div class="wk-empty">Walang naka-schedule para sa araw na ito. I-click ang timeline o pindutin ang “➕ Add Activity”.</div>';
   return h;
 }
+function wkMonthHTML(today){
+  var y=wkDayDate.getFullYear(),m=wkDayDate.getMonth();
+  var first=new Date(y,m,1);
+  var off=(first.getDay()+6)%7;
+  var gridStart=new Date(y,m,1-off);
+  var dows=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var h='<div class="wkm-grid">';
+  dows.forEach(function(n){h+='<div class="wkm-dow">'+n+'</div>';});
+  for(var i=0;i<42;i++){
+    var dt=new Date(gridStart);dt.setDate(gridStart.getDate()+i);
+    var inMonth=dt.getMonth()===m;
+    var dow=(dt.getDay()+6)%7, wkKey=wkIsoWeek(dt);
+    var acts=weeklyActivities.filter(function(a){return (a.day||0)===dow && (a.recurring||a.weekKey===wkKey);});
+    acts.forEach(function(a){a._s=Math.max(WK_H0,Math.min(WK_H1+0.5,a.start||WK_H0));});
+    acts.sort(function(a,b){return a._s-b._s;});
+    var cls='wkm-cell'+(inMonth?'':' wkm-out')+(wkSameDay(dt,today)?' wkm-today':'')+(wkSameDay(dt,wkDayDate)?' wkm-sel':'');
+    h+='<div class="'+cls+'" data-date="'+dt.getFullYear()+'-'+(dt.getMonth()+1)+'-'+dt.getDate()+'"><div class="wkm-dnum">'+dt.getDate()+'</div>';
+    acts.slice(0,3).forEach(function(a){var tl=wkFmtHM(a._s).replace(':00','');h+='<div class="wkm-chip" data-id="'+esc(a.id)+'" style="background:'+wkCatColor(a.cat)+'" title="'+esc(a.title)+' · '+wkFmtRange(a._s,Math.max(0.5,a.dur||1))+'">'+tl+' '+esc(a.title)+'</div>';});
+    if(acts.length>3)h+='<div class="wkm-more">+'+(acts.length-3)+' pa</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+  return h;
+}
 function renderWeekly(){
   var anyPanel=document.querySelector('.cal-lpanel[data-lp="calendar"]');
   if(!anyPanel)return;
@@ -2155,17 +2193,19 @@ function renderWeekly(){
   if(!wp){wp=document.createElement('div');wp.className='cal-lpanel';wp.setAttribute('data-lp','weekly');parent.appendChild(wp);}
   wp.classList.toggle('active',(typeof calSubTab!=='undefined'&&calSubTab==='weekly'));
   var today=new Date();today.setHours(0,0,0,0);
+  weekStart=wkMonday(wkDayDate);
   var mode=wkViewMode;
+  var VIEWLBL={month:'Month',week:'Week',day:'Daily'};
+  var rangeLabel,prevTitle,nextTitle,pickTitle;
+  if(mode==='month'){rangeLabel=wkDayDate.toLocaleDateString('en-PH',{month:'long',year:'numeric'});prevTitle='Previous month';nextTitle='Next month';pickTitle='Jump to date';}
+  else if(mode==='week'){var s2=new Date(weekStart),e2=new Date(weekStart);e2.setDate(s2.getDate()+6);rangeLabel=s2.toLocaleDateString('en-PH',{month:'short',day:'numeric'})+' – '+e2.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});prevTitle='Previous week';nextTitle='Next week';pickTitle='Jump to week';}
+  else {rangeLabel=wkDayDate.toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric',year:'numeric'});prevTitle='Previous day';nextTitle='Next day';pickTitle='Jump to date';}
   var h='<div class="wk-top">';
-  if(mode==='week'){
-    var start=new Date(weekStart),end=new Date(weekStart);end.setDate(start.getDate()+6);
-    var rangeLabel=start.toLocaleDateString('en-PH',{month:'short',day:'numeric'})+' – '+end.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
-    h+='<div class="wk-nav"><button class="btn btn-secondary btn-compact" id="wkPrev" title="Previous week">‹</button><button class="btn btn-secondary btn-compact" id="wkToday">Today</button><button class="btn btn-secondary btn-compact" id="wkNext" title="Next week">›</button><div class="wk-range">'+rangeLabel+'</div><input type="date" id="wkPick" class="wk-pick" title="Jump to week"></div>';
-  } else {
-    var dlabel=wkDayDate.toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
-    h+='<div class="wk-nav"><button class="btn btn-secondary btn-compact" id="wkPrev" title="Previous day">‹</button><button class="btn btn-secondary btn-compact" id="wkToday">Today</button><button class="btn btn-secondary btn-compact" id="wkNext" title="Next day">›</button><div class="wk-range">'+dlabel+'</div><input type="date" id="wkPick" class="wk-pick" title="Jump to date"></div>';
-  }
-  h+='<div class="wk-mid"><div class="wk-seg"><button data-vm="week"'+(mode==='week'?' class="active"':'')+'>📆 Week</button><button data-vm="day"'+(mode==='day'?' class="active"':'')+'>📅 Day</button></div></div>';
+  h+='<div class="wk-nav"><button class="btn btn-secondary btn-compact" id="wkPrev" title="'+prevTitle+'">‹</button>'
+    +'<button class="btn btn-secondary btn-compact" id="wkToday">Today</button>'
+    +'<button class="btn btn-primary btn-compact wk-cycle" id="wkCycle" title="Palitan ang view (Month → Week → Daily)">🔁 '+VIEWLBL[mode]+'</button>'
+    +'<button class="btn btn-secondary btn-compact" id="wkNext" title="'+nextTitle+'">›</button>'
+    +'<div class="wk-range">'+rangeLabel+'</div><input type="date" id="wkPick" class="wk-pick" title="'+pickTitle+'"></div>';
   h+='<div class="wk-actions"><button class="btn btn-primary btn-compact" id="wkAdd">➕ Add Activity</button><div class="wk-menu"><button class="btn btn-secondary btn-compact" id="wkMenuBtn">⚙️ Manage ▾</button><div class="wk-menu-list" id="wkMenuList">'
     +'<button data-wa="dup">📋 Duplicate Previous Week</button>'
     +'<button data-wa="tpl">💾 Save as Weekly Template</button>'
@@ -2178,12 +2218,16 @@ function renderWeekly(){
     +'</div></div></div>';
   h+='</div>';
   h+='<div class="wk-legend">'+WK_CATS.map(function(c){return '<span class="wk-lg"><i style="background:'+c.c+'"></i>'+esc(c.k)+'</span>';}).join('')+'</div>';
-  h+=(mode==='week'?wkWeekHTML(today):wkDayHTML(today));
-  h+='<div class="wk-note">💡 I-click ang timeline para magdagdag (taas ng slot = :00, baba = :30). I-drag ang card para ilipat. Ang recurring ay lumalabas kada linggo; ang hindi recurring ay sa linggong ito lang.</div>';
+  h+=(mode==='month'?wkMonthHTML(today):(mode==='week'?wkWeekHTML(today):wkDayHTML(today)));
+  var noteTxt=(mode==='month')?'💡 I-click ang araw para makita ang Daily view nito. I-click ang activity chip para i-edit.':'💡 I-click ang timeline para magdagdag (taas ng slot = :00, baba = :30). I-drag ang card para ilipat. Ang recurring ay lumalabas kada linggo; ang hindi recurring ay sa linggong ito lang.';
+  h+='<div class="wk-note">'+noteTxt+'</div>';
   wp.innerHTML=h;
 
-  // view toggle
-  wp.querySelectorAll('.wk-seg button[data-vm]').forEach(function(b){b.onclick=function(){wkViewMode=b.dataset.vm;if(wkViewMode==='day'){var ws=new Date(weekStart),we=new Date(weekStart);we.setDate(ws.getDate()+6);if(wkDayDate<ws||wkDayDate>we){var t=new Date();t.setHours(0,0,0,0);wkDayDate=(t>=ws&&t<=we)?t:new Date(ws);}}renderWeekly();};});
+  // single cycling view switcher: Month → Week → Daily → Month
+  var cyc=wkEl('wkCycle');if(cyc)cyc.onclick=function(){wkViewMode=(mode==='month')?'week':(mode==='week'?'day':'month');renderWeekly();};
+  // MONTH: click a day -> Daily view; click a chip -> edit
+  wp.querySelectorAll('.wkm-cell[data-date]').forEach(function(c){c.onclick=function(){var p=c.dataset.date.split('-');wkDayDate=new Date(+p[0],+p[1]-1,+p[2]);wkDayDate.setHours(0,0,0,0);wkViewMode='day';renderWeekly();};});
+  wp.querySelectorAll('.wkm-chip[data-id]').forEach(function(ch){ch.onclick=function(e){e.stopPropagation();var a=weeklyActivities.find(function(x){return x.id===ch.dataset.id;});if(a)wkOpenModal(a);};});
   // jump to a specific day from the week header
   wp.querySelectorAll('.wk-dhead[data-gd]').forEach(function(hd){hd.onclick=function(){var s=new Date(weekStart);s.setDate(s.getDate()+(+hd.dataset.gd));s.setHours(0,0,0,0);wkDayDate=s;wkViewMode='day';renderWeekly();};});
   // slots: click-to-add (top half = :00, bottom half = :30) + drop target
@@ -2191,7 +2235,7 @@ function renderWeekly(){
     c.onclick=function(e){var r=c.getBoundingClientRect();var half=(e.clientY-r.top)>r.height/2?0.5:0;wkOpenModal(null,+c.dataset.day,(+c.dataset.hour)+half);};
     c.ondragover=function(e){e.preventDefault();c.classList.add('wk-drop');};
     c.ondragleave=function(){c.classList.remove('wk-drop');};
-    c.ondrop=function(e){e.preventDefault();c.classList.remove('wk-drop');var r=c.getBoundingClientRect();var half=(e.clientY-r.top)>r.height/2?0.5:0;var id=e.dataTransfer.getData('text/plain');var a=weeklyActivities.find(function(x){return x.id===id;});if(a){a.day=+c.dataset.day;a.start=(+c.dataset.hour)+half;if(!a.recurring)a.weekKey=(mode==='day'?wkIsoWeek(wkDayDate):wkIsoWeek(weekStart));wkSave();renderWeekly();}};
+    c.ondrop=function(e){e.preventDefault();c.classList.remove('wk-drop');var r=c.getBoundingClientRect();var half=(e.clientY-r.top)>r.height/2?0.5:0;var id=e.dataTransfer.getData('text/plain');var a=weeklyActivities.find(function(x){return x.id===id;});if(a){a.day=+c.dataset.day;a.start=(+c.dataset.hour)+half;if(!a.recurring)a.weekKey=wkIsoWeek(mode==='day'?wkDayDate:weekStart);wkSave();renderWeekly();}};
   });
   // activity cards
   wp.querySelectorAll('.wk-ev').forEach(function(card){
@@ -2203,12 +2247,12 @@ function renderWeekly(){
     card.ondragstart=function(e){e.dataTransfer.setData('text/plain',card.dataset.id);e.dataTransfer.effectAllowed='move';setTimeout(function(){card.classList.add('wk-dragging');},0);};
     card.ondragend=function(){card.classList.remove('wk-dragging');};
   });
-  // navigation
-  var pv=wkEl('wkPrev');if(pv)pv.onclick=function(){if(mode==='day'){wkDayDate.setDate(wkDayDate.getDate()-1);}else{weekStart.setDate(weekStart.getDate()-7);weekStart=wkMonday(weekStart);}renderWeekly();};
-  var nx=wkEl('wkNext');if(nx)nx.onclick=function(){if(mode==='day'){wkDayDate.setDate(wkDayDate.getDate()+1);}else{weekStart.setDate(weekStart.getDate()+7);weekStart=wkMonday(weekStart);}renderWeekly();};
-  var td=wkEl('wkToday');if(td)td.onclick=function(){var t=new Date();t.setHours(0,0,0,0);if(mode==='day'){wkDayDate=t;}else{weekStart=wkMonday(new Date());}renderWeekly();};
-  var pk=wkEl('wkPick');if(pk){var pd=(mode==='day'?wkDayDate:new Date(weekStart));pk.value=pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0')+'-'+String(pd.getDate()).padStart(2,'0');pk.onchange=function(){if(pk.value){var parts=pk.value.split('-');var nd=new Date(+parts[0],+parts[1]-1,+parts[2]);nd.setHours(0,0,0,0);if(mode==='day'){wkDayDate=nd;}else{weekStart=wkMonday(nd);}renderWeekly();}};}
-  var ad=wkEl('wkAdd');if(ad)ad.onclick=function(){wkOpenModal(null,(mode==='day'?(wkDayDate.getDay()+6)%7:0),9);};
+  // navigation (mode-aware), anchored on wkDayDate
+  var pv=wkEl('wkPrev');if(pv)pv.onclick=function(){if(mode==='month'){var d=new Date(wkDayDate.getFullYear(),wkDayDate.getMonth()-1,1);var last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(wkDayDate.getDate(),last));wkDayDate=d;}else if(mode==='week'){wkDayDate.setDate(wkDayDate.getDate()-7);}else{wkDayDate.setDate(wkDayDate.getDate()-1);}renderWeekly();};
+  var nx=wkEl('wkNext');if(nx)nx.onclick=function(){if(mode==='month'){var d=new Date(wkDayDate.getFullYear(),wkDayDate.getMonth()+1,1);var last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(wkDayDate.getDate(),last));wkDayDate=d;}else if(mode==='week'){wkDayDate.setDate(wkDayDate.getDate()+7);}else{wkDayDate.setDate(wkDayDate.getDate()+1);}renderWeekly();};
+  var td=wkEl('wkToday');if(td)td.onclick=function(){var t=new Date();t.setHours(0,0,0,0);wkDayDate=t;renderWeekly();};
+  var pk=wkEl('wkPick');if(pk){pk.value=wkDayDate.getFullYear()+'-'+String(wkDayDate.getMonth()+1).padStart(2,'0')+'-'+String(wkDayDate.getDate()).padStart(2,'0');pk.onchange=function(){if(pk.value){var parts=pk.value.split('-');var nd=new Date(+parts[0],+parts[1]-1,+parts[2]);nd.setHours(0,0,0,0);wkDayDate=nd;renderWeekly();}};}
+  var ad=wkEl('wkAdd');if(ad)ad.onclick=function(){wkOpenModal(null,(wkDayDate.getDay()+6)%7,9);};
   var mb=wkEl('wkMenuBtn');if(mb)mb.onclick=function(e){e.stopPropagation();var ml=wkEl('wkMenuList');if(ml)ml.classList.toggle('open');};
   if(!window._wkMenuClose){window._wkMenuClose=true;document.addEventListener('click',function(){var ml=document.getElementById('wkMenuList');if(ml)ml.classList.remove('open');});}
   wp.querySelectorAll('.wk-menu-list [data-wa]').forEach(function(b){b.onclick=function(){wkAction(b.dataset.wa);};});
