@@ -535,6 +535,44 @@ tr.tr-today>td{background:rgba(22,163,74,.12);border-top:2px solid #16a34a;borde
 .wkm-chip{font-size:9.5px;font-weight:700;color:#fff;border-radius:5px;padding:1px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .wkm-chip:hover{filter:brightness(1.08)}
 .wkm-more{font-size:9px;font-weight:700;color:#64748b}
+/* ===== Main calendar Week/Day time-block (cw-*) ===== */
+.cal-cycle{min-width:92px;font-weight:800}
+.cw-wrap{overflow-x:auto;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+.cw-cal{position:relative;background:#fff}
+.cw-head{display:grid;grid-template-columns:58px repeat(7,1fr)}
+.cw-corner{background:#083B8A;color:#fff;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;border-top-left-radius:12px}
+.cw-dhead{display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(180deg,#0B5ED7,#083B8A);color:#fff;font-weight:800;font-size:12px;padding:7px 0;border-left:1px solid rgba(255,255,255,.14);cursor:pointer}
+.cw-dhead span{font-size:12px;font-weight:700}
+.cw-dhead.cw-today{background:linear-gradient(180deg,#B8325F,#8d1f45)}
+.cw-dhead:hover{filter:brightness(1.08)}
+.cw-allrow{display:grid;grid-template-columns:58px repeat(7,1fr);border-top:1px solid #e2e8f0;background:#f8fafc}
+.cw-alllabel{font-size:9.5px;font-weight:700;color:#64748b;display:flex;align-items:center;justify-content:flex-end;padding:4px 8px 4px 0}
+.cw-allcell{min-height:22px;padding:3px;border-left:1px solid #eef2f6;display:flex;flex-direction:column;gap:2px}
+.cw-allchip{font-size:9.5px;font-weight:700;color:#fff;border-radius:5px;padding:1px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.cw-body{position:relative}
+.cw-bg{display:grid}
+.cw-rl{display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 8px 0 0;font-size:10px;font-weight:700;color:#64748b;background:#f8fafc;border-right:1px solid #e2e8f0;border-top:1px solid #eef2f6}
+.cw-slot{border-right:1px solid #eef2f6;border-top:1px solid #eef2f6;position:relative}
+.cw-slot::after{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px dashed #f1f5f9}
+.cw-ov{position:absolute;display:flex;pointer-events:none}
+.cw-daycol{flex:1;position:relative;pointer-events:none}
+.cw-ev{position:absolute;border-radius:8px;padding:3px 7px;color:#fff;overflow:hidden;cursor:pointer;pointer-events:auto;box-shadow:0 1px 4px rgba(2,32,54,.22);display:flex;flex-direction:column;gap:1px;line-height:1.2;border-left:4px solid rgba(255,255,255,.55);box-sizing:border-box}
+.cw-ev:hover{filter:brightness(1.07);z-index:30!important;box-shadow:0 6px 16px rgba(2,32,54,.32)}
+.cw-ev .cw-et{font-size:9.5px;font-weight:800;opacity:.96;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-ev .cw-eb{font-size:11px;font-weight:800;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.cw-dayhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;padding:11px 16px;background:linear-gradient(135deg,#0B5ED7,#083B8A);color:#fff;border-radius:12px;box-shadow:0 4px 14px rgba(8,59,138,.22)}
+.cw-dayhead .d1{font-size:16px;font-weight:800}
+.cw-dayhead .d2{font-size:12px;opacity:.9;margin-top:1px}
+.cw-dcount{background:rgba(255,255,255,.2);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:800;white-space:nowrap}
+.cw-dayall{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.cw-ev.cw-evday{border-radius:10px;padding:8px 11px;gap:3px;border-left-width:6px}
+.cw-ev.cw-evday .cw-et{font-size:11px}
+.cw-ev.cw-evday .cw-dtitle{font-size:13.5px;font-weight:800;white-space:normal;line-height:1.2}
+.cw-ev.cw-evday .cw-dmeta{display:flex;flex-wrap:wrap;gap:5px;margin-top:1px}
+.cw-ev.cw-evday .cw-chip{background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;white-space:nowrap}
+.cw-ev.cw-evday .cw-dnotes{font-size:11px;font-weight:500;opacity:.97;line-height:1.32;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;margin-top:1px}
+.cw-empty{padding:30px 16px;text-align:center;color:#94a3b8;font-size:13px}
+@media (max-width:640px){.cw-cal{min-width:680px}.cw-ev .cw-eb{font-size:10px}}
 @media (max-width:640px){
 .wk-range{font-size:12px}
 .wk-ev b{font-size:10.5px}
@@ -1966,7 +2004,7 @@ async function saveEventAndGcal(){const ev=saveEventModal(false);if(ev)await gca
 
 let bdayView=new Date();bdayView.setDate(1);
 let calHiddenColors=new Set();
-let calHideBirthdays=false,calHideClientBday=false,calHideQPR=false,calHideAnniv=false,policyListMonth=0,calWeekMode=false,clientBdayMonth=0,calSubTab='calendar';
+let calHideBirthdays=false,calHideClientBday=false,calHideQPR=false,calHideAnniv=false,policyListMonth=0,calWeekMode=false,calView='month',clientBdayMonth=0,calSubTab='calendar';
 let bdayListMonth=new Date().getMonth()+1;
 /* Version 2.8.0 — To-Do list + Today box */
 const TODO_KEY='tj-todos-v1';
@@ -2395,6 +2433,78 @@ function wkPrint(){
   w.document.open();w.document.write(html);w.document.close();
 }
 
+/* ===== Main Calendar: Week + Day time-block plotting (accurate height, overlap lanes) ===== */
+const CAL_H0=6, CAL_H1=23;
+function calEvBlock(e){
+  var str=String(e.time||'');
+  var ap=function(h,mm,a){h=+h;a=(a||'').toUpperCase();if(a==='NN')return 12+((+mm||0)/60);if(a==='PM'&&h<12)h+=12;if(a==='AM'&&h===12)h=0;return h+((+mm||0)/60);};
+  var m=str.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM|NN)?\s*(?:-|–|to|TO)\s*(\d{1,2})(?::(\d{2}))?\s*(AM|PM|NN)?/i);
+  if(m){var a1=m[3],a2=m[6];if(!a1&&a2)a1=a2;var s=ap(m[1],m[2],a1),en=ap(m[4],m[5],a2||a1);if(en<=s)en=s+1;return {s:s,e:en};}
+  var m2=str.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM|NN)/i);
+  if(m2){var s2=ap(m2[1],m2[2],m2[3]);return {s:s2,e:s2+1};}
+  return null;
+}
+function calFmtHM(h){var tot=Math.round(h*60);var hh=Math.floor(tot/60),mm=tot%60;var a=hh<12?'AM':'PM';var h12=hh%12;if(h12===0)h12=12;return h12+(mm?(':'+String(mm).padStart(2,'0')):'')+' '+a;}
+function calLayout(items){items.sort(function(a,b){return a._s-b._s||b._e-a._e;});var cols=[],cl=[],ce=-1;function fl(){var n=cols.length||1;cl.forEach(function(ev){ev._cols=n;});cols=[];cl=[];}items.forEach(function(ev){if(cl.length&&ev._s>=ce-0.0001){fl();ce=-1;}var pl=false;for(var i=0;i<cols.length;i++){if(cols[i]<=ev._s+0.0001){ev._col=i;cols[i]=ev._e;pl=true;break;}}if(!pl){ev._col=cols.length;cols.push(ev._e);}cl.push(ev);ce=Math.max(ce,ev._e);});fl();return items;}
+function calIsoOf(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+function calGather(ds){
+  var timed=[],allday=[];
+  calEvents.filter(function(e){return e.date===ds && !calHiddenColors.has(e.color||'#2f80ed');}).forEach(function(e){
+    var b=calEvBlock(e);
+    if(!b){allday.push(e);}else{e._s=Math.max(CAL_H0,Math.min(CAL_H1+0.9,b.s));e._e=Math.min(CAL_H1+1,Math.max(e._s+0.25,b.e));timed.push(e);}
+  });
+  return {timed:timed,allday:allday};
+}
+function calWeekHTML(){
+  var ws=new Date(bdayView);ws.setDate(bdayView.getDate()-bdayView.getDay());
+  var wdays=[];for(var i=0;i<7;i++){var dt=new Date(ws);dt.setDate(ws.getDate()+i);wdays.push(dt);}
+  var HPX=48,rows=CAL_H1-CAL_H0+1,bodyH=rows*HPX,todayIso=calIsoOf(new Date());
+  var perDay=wdays.map(function(dt){
+    var g=calGather(calIsoOf(dt));
+    if(!calHideBirthdays)agents.filter(function(a){return a.birthday;}).forEach(function(a){var p=String(a.birthday).split('-');if(+p[1]===dt.getMonth()+1&&+p[2]===dt.getDate())g.allday.push({title:'🎂 '+displayAgentName(a.name),color:'#c0397a'});});
+    return {dt:dt,timed:g.timed,allday:g.allday};
+  });
+  var h='<div class="cw-wrap"><div class="cw-cal" style="min-width:880px">';
+  h+='<div class="cw-head"><div class="cw-corner">Time</div>'+wdays.map(function(dt){return '<div class="cw-dhead'+(calIsoOf(dt)===todayIso?' cw-today':'')+'" data-cwday="'+calIsoOf(dt)+'" title="Buksan ang araw na ito">'+dt.toLocaleDateString('en-PH',{weekday:'short'})+' <span>'+dt.getDate()+'</span></div>';}).join('')+'</div>';
+  h+='<div class="cw-allrow"><div class="cw-alllabel">All-day</div>'+perDay.map(function(pd){return '<div class="cw-allcell">'+pd.allday.map(function(e){return '<div class="cw-allchip" style="background:'+esc(e.color||'#2f80ed')+'" '+(e.id?('data-ev="'+e.id+'"'):'')+'>'+esc(e.title)+'</div>';}).join('')+'</div>';}).join('')+'</div>';
+  h+='<div class="cw-body" style="height:'+bodyH+'px"><div class="cw-bg" style="position:absolute;inset:0;grid-template-columns:58px repeat(7,1fr);grid-template-rows:repeat('+rows+','+HPX+'px)">';
+  for(var hh=CAL_H0;hh<=CAL_H1;hh++){h+='<div class="cw-rl" style="grid-column:1;grid-row:'+(hh-CAL_H0+1)+'">'+calFmtHM(hh)+'</div>';for(var d2=0;d2<7;d2++){h+='<div class="cw-slot" style="grid-column:'+(d2+2)+';grid-row:'+(hh-CAL_H0+1)+'"></div>';}}
+  h+='</div><div class="cw-ov" style="left:58px;top:0;right:0;bottom:0">';
+  perDay.forEach(function(pd){
+    calLayout(pd.timed);
+    h+='<div class="cw-daycol">';
+    pd.timed.forEach(function(e){
+      var top=(e._s-CAL_H0)*HPX, ht=Math.max(20,(e._e-e._s)*HPX),cols=e._cols||1,col=e._col||0;
+      h+='<div class="cw-ev" data-ev="'+esc(e.id)+'" style="top:'+top+'px;height:'+ht+'px;left:calc('+(col/cols*100)+'% + 2px);width:calc('+(100/cols)+'% - 4px);background:'+esc(e.color||'#2f80ed')+'"><span class="cw-et">'+esc(calFmtHM(e._s))+'–'+esc(calFmtHM(e._e))+'</span><span class="cw-eb">'+esc(e.title)+'</span></div>';
+    });
+    h+='</div>';
+  });
+  h+='</div></div></div></div>';
+  return h;
+}
+function calDayHTML(){
+  var HPX=60,rows=CAL_H1-CAL_H0+1,bodyH=rows*HPX,ds=calIsoOf(bdayView);
+  var g=calGather(ds);var items=g.timed,allday=g.allday;
+  if(!calHideBirthdays)agents.filter(function(a){return a.birthday;}).forEach(function(a){var p=String(a.birthday).split('-');if(+p[1]===bdayView.getMonth()+1&&+p[2]===bdayView.getDate())allday.push({title:'🎂 '+displayAgentName(a.name),color:'#c0397a'});});
+  calLayout(items);
+  var isT=(ds===calIsoOf(new Date()));
+  var weekdayName=bdayView.toLocaleDateString('en-PH',{weekday:'long'});
+  var dateName=bdayView.toLocaleDateString('en-PH',{month:'long',day:'numeric',year:'numeric'});
+  var h='<div class="cw-dayhead"><div><div class="d1">'+weekdayName+(isT?' · Today':'')+'</div><div class="d2">'+dateName+'</div></div><div class="cw-dcount">'+items.length+' activit'+(items.length===1?'y':'ies')+'</div></div>';
+  if(allday.length)h+='<div class="cw-dayall">'+allday.map(function(e){return '<span class="cw-allchip" style="background:'+esc(e.color||'#2f80ed')+'" '+(e.id?('data-ev="'+e.id+'"'):'')+'>'+esc(e.title)+'</span>';}).join('')+'</div>';
+  h+='<div class="cw-wrap"><div class="cw-cal" style="min-width:340px"><div class="cw-body" style="height:'+bodyH+'px"><div class="cw-bg" style="position:absolute;inset:0;grid-template-columns:64px 1fr;grid-template-rows:repeat('+rows+','+HPX+'px)">';
+  for(var hh=CAL_H0;hh<=CAL_H1;hh++){h+='<div class="cw-rl" style="grid-column:1;grid-row:'+(hh-CAL_H0+1)+'">'+calFmtHM(hh)+'</div><div class="cw-slot" style="grid-column:2;grid-row:'+(hh-CAL_H0+1)+'"></div>';}
+  h+='</div><div class="cw-ov" style="left:64px;top:0;right:0;bottom:0"><div class="cw-daycol">';
+  items.forEach(function(e){
+    var top=(e._s-CAL_H0)*HPX, ht=Math.max(HPX-2,(e._e-e._s)*HPX),cols=e._cols||1,col=e._col||0;
+    var notes=e.notes?('<div class="cw-dnotes">'+esc(e.notes)+'</div>'):'';
+    var meta=(e.type?('<span class="cw-chip">'+esc(e.type)+'</span>'):'')+(e.host?('<span class="cw-chip">👤 '+esc(e.host)+'</span>'):'')+(e.location?('<span class="cw-chip">📍 '+esc(e.location)+'</span>'):'')+(e.zoom?('<span class="cw-chip">🔗 Zoom</span>'):'');
+    h+='<div class="cw-ev cw-evday" data-ev="'+esc(e.id)+'" style="top:'+top+'px;height:'+ht+'px;left:calc('+(col/cols*100)+'% + 3px);width:calc('+(100/cols)+'% - 6px);background:'+esc(e.color||'#2f80ed')+'"><span class="cw-et">⏰ '+esc(calFmtHM(e._s))+' – '+esc(calFmtHM(e._e))+'</span><div class="cw-dtitle">'+esc(e.title)+'</div>'+(meta?('<div class="cw-dmeta">'+meta+'</div>'):'')+notes+'</div>';
+  });
+  h+='</div></div></div></div>';
+  if(!items.length&&!allday.length)h+='<div class="cw-empty">Walang naka-schedule sa araw na ito. Pindutin ang ➕ Add Activity.</div>';
+  return h;
+}
 function renderBirthdays(){
   const host=$('birthdayList');if(!host)return;
   const y=bdayView.getFullYear(),m=bdayView.getMonth(),monthName=bdayView.toLocaleDateString('en-PH',{month:'long',year:'numeric'});
@@ -2408,18 +2518,12 @@ function renderBirthdays(){
       +ppl.map(a=>{const isC=a._client,fn=displayAgentName(a.name||'').trim().split(/\s+/)[0]||'';return `<div class="cal-bday ${isC?((!a.status||/in.?force/i.test(String(a.status)))?'bday-client-inforce':'bday-client-other'):'bday-pink'}" title="🎂 ${isC?'Client: ':''}${esc(a.name)}"><img src="${a.photo||placeholder}" onerror="this.src='${placeholder}'"><span>🎂 ${isC?'':'HBD '}${esc(fn)}${isC?' 🧑':''}</span></div>`}).join('')
       +`</div>`;
   }
-  // ---- Week view (time-block) ----
-  const _isoOf=dt=>dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-  const _wanchor=new Date(y,m,bdayView.getDate());const _ws=new Date(_wanchor);_ws.setDate(_wanchor.getDate()-_wanchor.getDay());
-  const _wdays=[];for(let i=0;i<7;i++){const dt=new Date(_ws);dt.setDate(_ws.getDate()+i);_wdays.push(dt);}
-  const _startHour=t=>{const mm=String(t||'').match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm|nn)?/i);if(!mm)return null;let hh=+mm[1];const ap=(mm[3]||'').toLowerCase();if(ap==='nn')hh=12;else if(ap==='pm'&&hh<12)hh+=12;else if(ap==='am'&&hh===12)hh=0;return hh;};
-  const _dayItems=dt=>{const ds=_isoOf(dt),timed={},allday=[];calEvents.filter(e=>e.date===ds&&!calHiddenColors.has(e.color||'#2f80ed')).forEach(e=>{const h=_startHour(e.time);if(h==null)allday.push(e);else(timed[h]=timed[h]||[]).push(e)});if(!calHideBirthdays)agents.filter(a=>a.birthday).forEach(a=>{const p=String(a.birthday).split('-');if(+p[1]===dt.getMonth()+1&&+p[2]===dt.getDate())allday.push({title:'🎂 '+displayAgentName(a.name),color:'#c0397a'})});return{timed,allday};};
-  const _wItems=_wdays.map(_dayItems);const _hours=[];for(let h=6;h<=23;h++)_hours.push(h);const _h12=x=>((x%12)||12),_ampm=x=>x<12?'AM':'PM';const _todayIso=_isoOf(new Date());
-  let weekHtml='<div class="wk-grid"><div class="wk-cell wk-corner">Time</div>'+_wdays.map(dt=>`<div class="wk-cell wk-dayhead${_isoOf(dt)===_todayIso?' today':''}">${dt.toLocaleDateString('en-PH',{weekday:'short'})} <span>${dt.getDate()}</span></div>`).join('');
-  weekHtml+='<div class="wk-cell wk-timelabel">All-day</div>'+_wItems.map(it=>`<div class="wk-cell wk-allday">${it.allday.map(e=>`<div class="wk-ev" style="background:${esc(e.color||'#2f80ed')}" ${e.id?('data-ev="'+e.id+'"'):''}>${esc(e.title)}</div>`).join('')}</div>`).join('');
-  _hours.forEach(h=>{weekHtml+=`<div class="wk-cell wk-timelabel">${_h12(h)}:00 ${_ampm(h)}</div>`+_wItems.map(it=>`<div class="wk-cell wk-slot">${(it.timed[h]||[]).map(e=>`<div class="wk-ev" style="background:${esc(e.color||'#2f80ed')}" data-ev="${e.id}">${e.time?('<b>'+esc(e.time)+'</b> '):''}${esc(e.title)}</div>`).join('')}</div>`).join('');});
-  weekHtml+='</div>';
-  const weekLabel=_wdays[0].toLocaleDateString('en-PH',{month:'short',day:'numeric'})+' – '+_wdays[6].toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+  // ---- Week + Day views (time-block, accurate height, overlap lanes) ----
+  const _ws=new Date(bdayView);_ws.setDate(bdayView.getDate()-bdayView.getDay());const _we=new Date(_ws);_we.setDate(_ws.getDate()+6);
+  const weekLabel=_ws.toLocaleDateString('en-PH',{month:'short',day:'numeric'})+' – '+_we.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+  const dayLabel=bdayView.toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+  const weekHtml=calWeekHTML();
+  const dayHtml=calDayHTML();
   const now=new Date(),todayMid=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   const _agBd=agents.filter(a=>a.birthday).map(a=>{const p=String(a.birthday).split('-');return{a,bm:Number(p[1]),bd:Number(p[2]),by:Number(p[0])}});const _clBd=clients.filter(c=>/^\d{4}-\d{2}-\d{2}$/.test(c.birthday||'')).map(c=>{const p=String(c.birthday).split('-');return{a:{name:c.name,status:'Client',photo:''},bm:Number(p[1]),bd:Number(p[2]),by:Number(p[0])}});const all=_agBd.filter(o=>!bdayListMonth||o.bm===bdayListMonth).sort((x,y)=>x.bm-y.bm||x.bd-y.bd);
   const bdayHtml=all.length?all.map(({a,bm,bd,by})=>{let next=new Date(now.getFullYear(),bm-1,bd);if(next<todayMid)next=new Date(now.getFullYear()+1,bm-1,bd);const dd=Math.round((next-todayMid)/86400000),turning=by?next.getFullYear()-by:null;
@@ -2446,14 +2550,14 @@ function renderBirthdays(){
       <button class="cal-lt${calSubTab==='today'?' active':''}" data-lp="today">📍 Today Box</button>
       <button class="cal-lt${calSubTab==='training'?' active':''}" data-lp="training">🎓 Training Activities</button>
       <button class="cal-lt${calSubTab==='agentbday'?' active':''}" data-lp="agentbday">🎂 Agent Birthdays</button>
-      <button class="cal-lt${calSubTab==='clientbday'?' active':''}" data-lp="clientbday">👤 Client Birthdays</button><button class="cal-lt${calSubTab==='weekly'?' active':''}" data-lp="weekly">📆 Weekly Schedule</button>
+      <button class="cal-lt${calSubTab==='clientbday'?' active':''}" data-lp="clientbday">👤 Client Birthdays</button>
       
       <button class="cal-lt${calSubTab==='qpr'?' active':''}" data-lp="qpr">🔁 Quarterly Policy Review</button><button class="cal-lt${calSubTab==='anniv'?' active':''}" data-lp="anniv">🎊 Policy Anniversary</button><button class="cal-lt${calSubTab==='clients'?' active':''}" data-lp="clients">👥 Clients</button><span style="flex:1"></span><select id="calMonthFilter" class="filter" style="${(calSubTab==='calendar'||calSubTab==='today')?'display:none':''}"></select>
     </div>
-    <div class="cal-head" style="${calSubTab==='calendar'?'':'display:none'}"><button class="btn btn-secondary btn-compact" id="bdayPrev" title="Previous month">‹</button><div class="cal-title">📅 ${calWeekMode?weekLabel:monthName}</div><button class="btn btn-secondary btn-compact" id="bdayNext" title="Next month">›</button><button class="btn btn-secondary btn-compact" id="bdayToday">Today</button><button class="btn btn-secondary btn-compact" id="calWeekToggle">${calWeekMode?'📅 Month':'🗓️ Week'}</button><div class="cal-legend-wrap"><button class="cal-legend cal-legend-bday${calHideBirthdays?' off':''}" id="calBdayToggle" title="Show/hide agent birthdays">🎂</button>${[...new Set(calEvents.map(e=>e.color||'#2f80ed'))].map(c=>`<button class="cal-legend${calHiddenColors.has(c)?' off':''}" data-color="${esc(c)}" style="background:${esc(c)}" title="Show/hide this color"></button>`).join('')}</div><span style="flex:1"></span><button class="btn btn-secondary btn-compact cal-shot" id="calShot" title="Screenshot calendar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button><button class="btn btn-primary btn-compact" id="calAdd">➕ Add Activity</button><div class="cal-upload-wrap"><button class="btn btn-secondary btn-compact" id="calUploadBtn">📤 Upload ▾</button><div class="cal-upload-menu" id="calUploadMenu" style="display:none"><button class="cal-up-item" id="calUpPdf">📄 Upload PDF</button><button class="cal-up-item" id="calUpCsv">📊 Upload Activities CSV</button><button class="cal-up-item" id="calUpClient">👥 Client CSV</button><button class="cal-up-item" id="calUpTemplate">📥 CSV Template</button></div></div><input type="file" id="calUploadPdf" accept=".pdf,application/pdf" class="file-input" style="display:none"><input type="file" id="calUploadCsv" accept=".csv,text/csv" class="file-input" style="display:none"><input type="file" id="calUploadClient" accept=".csv,text/csv" class="file-input" style="display:none"><button class="btn btn-secondary btn-compact" id="calGcalSync" title="Register activities to your Google Calendar">📅 Google Calendar</button><button class="btn btn-secondary btn-compact" id="calClear">🗑️ Clear Calendar</button></div>
+    <div class="cal-head" style="${calSubTab==='calendar'?'':'display:none'}"><button class="btn btn-secondary btn-compact" id="bdayPrev" title="Previous month">‹</button><div class="cal-title">📅 ${calView==='month'?monthName:(calView==='week'?weekLabel:dayLabel)}</div><button class="btn btn-secondary btn-compact" id="bdayNext" title="Next">›</button><button class="btn btn-secondary btn-compact" id="bdayToday">Today</button><button class="btn btn-primary btn-compact cal-cycle" id="calCycle" title="Palitan ang view (Month → Week → Daily)">🔁 ${calView==='month'?'Month':(calView==='week'?'Week':'Daily')}</button><div class="cal-legend-wrap"><button class="cal-legend cal-legend-bday${calHideBirthdays?' off':''}" id="calBdayToggle" title="Show/hide agent birthdays">🎂</button>${[...new Set(calEvents.map(e=>e.color||'#2f80ed'))].map(c=>`<button class="cal-legend${calHiddenColors.has(c)?' off':''}" data-color="${esc(c)}" style="background:${esc(c)}" title="Show/hide this color"></button>`).join('')}</div><span style="flex:1"></span><button class="btn btn-secondary btn-compact cal-shot" id="calShot" title="Screenshot calendar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button><button class="btn btn-primary btn-compact" id="calAdd">➕ Add Activity</button><div class="cal-upload-wrap"><button class="btn btn-secondary btn-compact" id="calUploadBtn">📤 Upload ▾</button><div class="cal-upload-menu" id="calUploadMenu" style="display:none"><button class="cal-up-item" id="calUpPdf">📄 Upload PDF</button><button class="cal-up-item" id="calUpCsv">📊 Upload Activities CSV</button><button class="cal-up-item" id="calUpClient">👥 Client CSV</button><button class="cal-up-item" id="calUpTemplate">📥 CSV Template</button></div></div><input type="file" id="calUploadPdf" accept=".pdf,application/pdf" class="file-input" style="display:none"><input type="file" id="calUploadCsv" accept=".csv,text/csv" class="file-input" style="display:none"><input type="file" id="calUploadClient" accept=".csv,text/csv" class="file-input" style="display:none"><button class="btn btn-secondary btn-compact" id="calGcalSync" title="Register activities to your Google Calendar">📅 Google Calendar</button><button class="btn btn-secondary btn-compact" id="calClear">🗑️ Clear Calendar</button></div>
     <div class="cal-lpanel${calSubTab==='calendar'?' active':''}" data-lp="calendar">
-<div id="calCapture"><div class="cal-cap-title">📅 ${calWeekMode?('Week: '+weekLabel):monthName}</div>
-    ${calWeekMode?weekHtml:(`<div class="cal-grid cal-dow"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div><div class="cal-grid">${cells}</div>`)}</div>
+<div id="calCapture"><div class="cal-cap-title">📅 ${calView==='month'?monthName:(calView==='week'?('Week: '+weekLabel):('Day: '+dayLabel))}</div>
+    ${calView==='week'?weekHtml:(calView==='day'?dayHtml:(`<div class="cal-grid cal-dow"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div><div class="cal-grid">${cells}</div>`))}</div>
     ${todosHtml()}
     </div>
     <div class="cal-lpanel${calSubTab==='today'?' active':''}" data-lp="today">
@@ -2485,16 +2589,19 @@ ${todayBoxHtml()}
     </div>`;
   host.querySelectorAll('.cl-status').forEach(s=>s.onchange=()=>{const c=clients.find(x=>x.id===s.dataset.cid);if(c){c.status=s.value;saveClients&&saveClients();s.className='cl-status '+clStatusClass(s.value);}});
   host.querySelectorAll('[data-cl-del]').forEach(b=>b.onclick=()=>{if(confirm('Delete this client?')){clients=clients.filter(x=>x.id!==b.dataset.clDel);saveClients&&saveClients();renderBirthdays();}});
-  $('bdayPrev').onclick=()=>{if(calWeekMode)bdayView.setDate(bdayView.getDate()-7);else bdayView.setMonth(bdayView.getMonth()-1);renderBirthdays()};
-  $('bdayNext').onclick=()=>{if(calWeekMode)bdayView.setDate(bdayView.getDate()+7);else bdayView.setMonth(bdayView.getMonth()+1);renderBirthdays()};
-  $('bdayToday').onclick=()=>{bdayView=new Date();if(!calWeekMode)bdayView.setDate(1);renderBirthdays()};
-  if($('calWeekToggle'))$('calWeekToggle').onclick=()=>{calWeekMode=!calWeekMode;if(calWeekMode&&bdayView.getDate()===1){bdayView=new Date();}renderBirthdays()};
+  $('bdayPrev').onclick=()=>{if(calView==='month')bdayView.setMonth(bdayView.getMonth()-1);else if(calView==='week')bdayView.setDate(bdayView.getDate()-7);else bdayView.setDate(bdayView.getDate()-1);renderBirthdays()};
+  $('bdayNext').onclick=()=>{if(calView==='month')bdayView.setMonth(bdayView.getMonth()+1);else if(calView==='week')bdayView.setDate(bdayView.getDate()+7);else bdayView.setDate(bdayView.getDate()+1);renderBirthdays()};
+  $('bdayToday').onclick=()=>{bdayView=new Date();renderBirthdays()};
+  if($('calCycle'))$('calCycle').onclick=()=>{const nv=(calView==='month')?'week':(calView==='week'?'day':'month');if(calView==='month'&&nv!=='month'){const t=new Date();if(t.getFullYear()===bdayView.getFullYear()&&t.getMonth()===bdayView.getMonth())bdayView=t;}calView=nv;renderBirthdays()};
+  host.querySelectorAll('.cw-ev[data-ev]').forEach(el=>el.onclick=()=>openEventModal(el.dataset.ev));
+  host.querySelectorAll('.cw-allchip[data-ev]').forEach(el=>el.onclick=()=>openEventModal(el.dataset.ev));
+  host.querySelectorAll('.cw-dhead[data-cwday]').forEach(el=>el.onclick=()=>{const p=el.dataset.cwday.split('-');bdayView=new Date(+p[0],+p[1]-1,+p[2]);calView='day';renderBirthdays()});
   if($('calEmailReminders'))$('calEmailReminders').onclick=()=>sendTrainingReminders();
   document.querySelectorAll('.cal-lt').forEach(b=>b.onclick=()=>{calSubTab=b.dataset.lp;document.querySelectorAll('.cal-lt').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.cal-lpanel').forEach(p=>p.classList.toggle('active',p.dataset.lp===calSubTab));const ch=document.querySelector('.cal-head');if(ch)ch.style.display=(calSubTab==='calendar')?'':'none';const mf=document.getElementById('calMonthFilter');if(mf)mf.style.display=(calSubTab==='calendar'||calSubTab==='today')?'none':''});
   host.querySelectorAll('.cal-legend[data-color]').forEach(b=>b.onclick=()=>{const c=b.dataset.color;if(calHiddenColors.has(c))calHiddenColors.delete(c);else calHiddenColors.add(c);renderBirthdays()});
   if($('calBdayToggle'))$('calBdayToggle').onclick=()=>{calHideBirthdays=!calHideBirthdays;renderBirthdays()};
   if($('calShot'))$('calShot').onclick=async()=>{const el=$('calCapture');if(!el)return;const tn=(typeof branding!=='undefined'&&branding.teamName)?branding.teamName:'Team Josh';const content=document.querySelector('.content'),pz=content?content.style.zoom:'';const pw=el.style.width,pmw=el.style.maxWidth;if(content)content.style.zoom='1';el.style.width='1400px';el.style.maxWidth='1400px';el.classList.add('capturing');await new Promise(r=>setTimeout(r,140));try{if(!window.html2canvas)await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');const canvas=await html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,width:1400,windowWidth:1400});const a=document.createElement('a');a.download=(tn+'_Calendar_'+monthName).replace(/\s+/g,'_')+'.png';a.href=canvas.toDataURL('image/png');a.click()}catch(e){console.error(e);alert('Screenshot failed. Please try again.')}finally{el.classList.remove('capturing');el.style.width=pw;el.style.maxWidth=pmw;if(content)content.style.zoom=pz}};
-  $('calAdd').onclick=()=>openEventModal();try{renderWeekly()}catch(e){console.warn('weekly',e)}try{setupCalTabs()}catch(e){console.warn('caltabs',e)}
+  $('calAdd').onclick=()=>openEventModal();try{setupCalTabs()}catch(e){console.warn('caltabs',e)}
   if($('calUploadBtn'))$('calUploadBtn').onclick=e=>{e.stopPropagation();const mn=$('calUploadMenu');if(mn)mn.style.display=mn.style.display==='none'?'block':'none'};
   if($('calUpPdf'))$('calUpPdf').onclick=()=>{if($('calUploadMenu'))$('calUploadMenu').style.display='none';$('calUploadPdf').click()};
   if($('calUpCsv'))$('calUpCsv').onclick=()=>{if($('calUploadMenu'))$('calUploadMenu').style.display='none';$('calUploadCsv').click()};
